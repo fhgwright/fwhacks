@@ -1,0 +1,10 @@
+Logfile
+Separate create from start
+Process limiter
+Paramiko instead of ssh command (mainly for signals).
+Handle progress indicators.
+Support extra label to report with "started", "still running", and "complete".
+Support postprocessing command with substitution.
+Investigate ordering problem with "port -vt". (ordering issue noted below?)
+Timestamp signal exits when appropriate (local exception) ?
+Per-process output collection process, for better timestamping/ordering.

@@ -327,6 +327,7 @@ class Process(object):  # pylint: disable=too-many-instance-attributes
     else:
       self.args = args
       self.executable = None
+    self.ret = None
     self.finished = None
     self.outdata = []
     self.partial = [b'', b'']
@@ -518,7 +519,7 @@ def main(argv):
   if parsed.signal_test:
     print('[This pid = %d]' % os.getpid())
   procs = []
-  results = []
+  done = []
   retval = 0
   mapdict = PATH_MAP
   if parsed.arg_file:
@@ -592,7 +593,9 @@ def main(argv):
         if not parsed.sequential or len(procs) < 2:
           proc.Print(parsed.names, parsed.times)
         continue
+      proc.ret = ret
       procs.remove(proc)
+      done.append(proc)
       proc.Unregister(poller)
       proc.Print(parsed.names, parsed.times)
       proc.PrintLast(parsed.names, parsed.times)
@@ -611,11 +614,11 @@ def main(argv):
               file=sys.stderr)
         if ret > retval:
           retval = ret
-      results.append('%s=%d' % (proc.name, ret))
       if parsed.verbose and procs:
-        if len(results) > 1:
+        if len(done) > 1:
+          results = ['%s=%d' % (p.name, p.ret) for p in done]
           print('[Returns (%d/%d): %s; retval = %d]'
-                % (len(results), len(args), ', '.join(results), retval),
+                % (len(done), len(args), ', '.join(results), retval),
                 file=sys.stderr)
         names = [x.name for x in procs]
         print('[Still running (%d/%d): %s]'
@@ -639,9 +642,17 @@ def main(argv):
       poller.poll(5000)
   finished = time.time()
   if parsed.verbose:
-    numdone = len(results)
+    numdone = len(done)
     if numdone > 1:
-      print('[Returns: %s]' % ', '.join(results), file=sys.stderr)
+      if not parsed.times:
+        results = ['%s=%d' % (p.name, p.ret) for p in done]
+        print('[Returns: %s]' % ', '.join(results), file=sys.stderr)
+      else:
+        for proc in done:
+          print('[%s returned %d, took %s]'
+                % (proc.name, proc.ret,
+                   ElapsedStr(proc.finished - proc.started)),
+                file=sys.stderr)
       print('[All %d processes complete, final return = %d]'
             % (numdone, retval), file=sys.stderr)
     if parsed.times:

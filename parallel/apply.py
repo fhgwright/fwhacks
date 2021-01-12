@@ -641,9 +641,9 @@ def main(argv):
           break
       poller.poll(5000)
   finished = time.time()
-  if parsed.verbose:
-    numdone = len(done)
-    if numdone > 1:
+  numdone = len(done)
+  if numdone > 1:
+    if parsed.verbose:
       if not parsed.times:
         results = ['%s=%d' % (p.name, p.ret) for p in done]
         print('[Returns: %s]' % ', '.join(results), file=sys.stderr)
@@ -655,10 +655,14 @@ def main(argv):
                 file=sys.stderr)
       print('[All %d processes complete, final return = %d]'
             % (numdone, retval), file=sys.stderr)
-    if parsed.times:
-      print('[Finished at %s, took %s]'
-            % (TimeStr(finished), ElapsedStr(finished - started)),
-            file=sys.stderr)
+    else:
+      results = ['%s=%d' % (p.name, p.ret) for p in done if p.ret]
+      if results:
+        print('[Failures: %s]' % ', '.join(results), file=sys.stderr)
+  if parsed.times:
+    print('[Finished at %s, took %s]'
+          % (TimeStr(finished), ElapsedStr(finished - started)),
+          file=sys.stderr)
   return retval
 
 

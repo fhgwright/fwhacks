@@ -7,7 +7,7 @@ import os
 import sys
 import time
 
-TIME_FMT = '%x %X %Z'
+TIME_FMT = '%c %Z'
 
 TROPICAL_YEAR = 365.242199 * 86400
 

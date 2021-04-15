@@ -33,6 +33,7 @@ def dateformats():
   # Various orderings with textual month
   for year in years:
     for month in tmonths:
+      yield '%%d-%s-%s' % (month, year)
       yield '%%d %s %s' % (month, year)
       yield '%s %%d %s' % (month, year)
       yield '%s %s %%d' % (year, month)

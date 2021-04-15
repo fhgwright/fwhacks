@@ -80,6 +80,11 @@ def str2time(string, tzone=None):
   return tvalue, havetime
 
 
+def time2str(tval):
+  """Convert time value to string."""
+  return time.strftime(TIME_FMT, time.localtime(tval))
+
+
 def main(argv):
   """main function"""
   argv0 = os.path.basename(argv[0])
@@ -101,14 +106,25 @@ def main(argv):
   now = time.time()
   age = (now - birth) / TROPICAL_YEAR
   years = int(round(age))
-  anniv = birth + years * TROPICAL_YEAR
-  tstruc = time.localtime(anniv)
-  tstr = time.strftime(TIME_FMT, tstruc)
+  anniv1 = birth + years * TROPICAL_YEAR
+  tstr1 = time2str(anniv1)
   if havetime:
-    print('%d-year anniversary is at %s' % (years, tstr))
+    anniv2 = anniv1
+    tstr2 = tstr1
   else:
-    tstr2 = time.strftime(TIME_FMT, time.localtime(anniv + 86399))
-    print('%d-year anniversary is between %s and %s' % (years, tstr, tstr2))
+    anniv2 = anniv1 + 86399
+    tstr2 = time2str(anniv2)
+  if anniv1 >= now:
+    when = 'will be'
+  elif anniv2 < now:
+    when = 'was'
+  else:
+    when = 'is'
+  if anniv1 == anniv2:
+    print('%d-year anniversary %s at %s' % (years, when, tstr1))
+  else:
+    print('%d-year anniversary %s between %s and %s'
+          % (years, when, tstr1, tstr2))
   return 0
 
 

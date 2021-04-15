@@ -88,15 +88,22 @@ def time2str(tval):
 def main(argv):
   """main function"""
   argv0 = os.path.basename(argv[0])
-  argc = len(argv)
-  if argc >= 4 and argv[1] == '-z':
-    tzone = argv[2]
-    args = argv[3:]
-  elif argc >= 2:
-    tzone = None
-    args = argv[1:]
-  else:
-    print('Usage is %s [-z timezone] date/time' % argv0, file=sys.stderr)
+  args = argv[1:]
+  age = None
+  tzone = None
+  while len(args) > 2:
+    if args[0] == '-z':
+      tzone = args[1]
+      args = args[2:]
+      continue
+    if args[0] == '-a':
+      age = int(args[1])
+      args = args[2:]
+      continue
+    break
+  if not args:
+    print('Usage is %s [-z timezone|-a age] date[ time]'
+          % argv0, file=sys.stderr)
     return 2
   try:
     birth, havetime = str2time(' '.join(args), tzone)
@@ -104,7 +111,8 @@ def main(argv):
     print(repr(exc), file=sys.stderr)
     return 1
   now = time.time()
-  age = (now - birth) / TROPICAL_YEAR
+  if age is None:
+    age = (now - birth) / TROPICAL_YEAR
   years = int(round(age))
   anniv1 = birth + years * TROPICAL_YEAR
   tstr1 = time2str(anniv1)

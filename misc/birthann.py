@@ -9,7 +9,9 @@ import time
 
 TIME_FMT = '%c %Z'
 
-TROPICAL_YEAR = 365.242199 * 86400
+# Year length from timeanddate.com 2021-04-24
+# https://www.timeanddate.com/astronomy/tropicalyearlength.html
+TROPICAL_YEAR = 365.242189 * 86400
 
 
 def str2tstruc(string):

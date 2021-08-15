@@ -6,5 +6,10 @@ Handle progress indicators.
 Support extra label to report with "started", "still running", and "complete".
 Support postprocessing command with substitution.
 Investigate ordering problem with "port -vt". (ordering issue noted below?)
-Timestamp signal exits when appropriate (local exception) ?
+Timestamp signal exits when appropriate (local exception, local run with -t) ?
 Per-process output collection process, for better timestamping/ordering.
+^T status report?
+Handle passwords, confirmations, etc.
+Handle failure to signal subprocess (UID change?)
+Fix semi-duplicate start messages in -tv mode
+Include count in Failures message.

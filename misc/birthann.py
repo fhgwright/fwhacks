@@ -13,6 +13,11 @@ TIME_FMT = '%c %Z'
 # https://www.timeanddate.com/astronomy/tropicalyearlength.html
 TROPICAL_YEAR = 365.242189 * 86400
 
+# Year length derived from vernal equinoxes in 1800 and 2200, from
+# https://www.neoprogrammics.com/de405_usno_ae98/DE405_Sun.php
+# 20-Mar-1800 20:11:35; 20-Mar-2200 18:47:45
+# This is one full Gregorian calendar cycle, centered on the year 2000.
+TROPICAL_YEAR = 365.2423544 * 86400
 
 def str2tstruc(string):
   """Parse a string into a struct_time object, and "time given" flag."""

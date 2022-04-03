@@ -542,7 +542,7 @@ def main(argv):
     poller.Signal(sig)
   started = time.time()
   if parsed.verbose and parsed.times:
-    print('[Started at %s]' % TimeStr(started))
+    print('[Started (%d) at %s]' % (len(args), TimeStr(started)))
   for arg in args:
     if arg:
       name = shlex.split(arg)[0]
@@ -563,7 +563,8 @@ def main(argv):
     proc.Register(poller)
     procs.append(proc)
   if parsed.verbose and not parsed.times:
-    print('[Started: %s]' % ','.join([x.name for x in procs]))
+    print('[Started (%d): %s]'
+          % (len(procs), ','.join([x.name for x in procs])))
   kill_time = None
   sigs_sent = set()
   killed = False

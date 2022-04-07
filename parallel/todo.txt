@@ -13,3 +13,4 @@ Handle passwords, confirmations, etc.
 Handle failure to signal subprocess (UID change?)
 Fix semi-duplicate start messages in -tv mode
 Include count in Failures message.
+Make -t work when (ping) piped through tee.

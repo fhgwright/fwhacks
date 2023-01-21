@@ -19,6 +19,13 @@ TROPICAL_YEAR = 365.242189 * 86400
 # This is one full Gregorian calendar cycle, centered on the year 2000.
 TROPICAL_YEAR = 365.2423544 * 86400
 
+# Year length derived from vernal equinoxes in 1900 and 2100, from
+# https://www.neoprogrammics.com/de405_usno_ae98/DE405_Sun.php
+# 21-Mar-1900 01:39:00; 20-Mar-2100 13:03:27
+# This may be a better fit to dates of interest, though not a full Gregorian
+# cycle.
+##???TROPICAL_YEAR = 365.2473766 * 86400
+
 def str2tstruc(string):
   """Parse a string into a struct_time object, and "time given" flag."""
   for fmt, havetime, year2d in dtformats():

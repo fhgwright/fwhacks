@@ -89,14 +89,16 @@ def main(argv):
   for sig in SIG_MAP:
     Sleeper.Signal(sig)
   sigs_reported = set()
+  ourpid = os.getpid()
   while True:
     print('Process %d sleeping for %d seconds; awaiting possible signal.'
-          % (os.getpid(), SLEEP_TIME))
+          % (ourpid, SLEEP_TIME))
     sys.stdout.flush()
     Sleeper.sleep(SLEEP_TIME)
     new_sigs = Sleeper.sigs_rcvd - sigs_reported
     for sig in new_sigs:
-      print('Received signal %d (%s).' % (sig, SIG_MAP.get(sig, '?')))
+      print('Process %d received signal %d (%s).'
+            % (ourpid, sig, SIG_MAP.get(sig, '?')))
     sigs_reported |= new_sigs
     if Sleeper.sigs_rcvd - SIG_WAIT or not new_sigs:
       break

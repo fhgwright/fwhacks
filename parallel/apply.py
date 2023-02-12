@@ -505,6 +505,8 @@ def ParseArgs(prog, args):
                       help="force IPv6 with -m's ssh")
   parser.add_argument('-S', '--shell', action='store_true',
                       help='run with shell')
+  parser.add_argument('-K', '--kill-hung', action='store_true',
+                      help='kill hung subprocesses')
   parser.add_argument('--signal-test', action='store_true',
                       help='enable signal-testing features')
   parser.add_argument('remaining', nargs=argparse.REMAINDER)
@@ -606,7 +608,10 @@ def main(argv):
         if not proc.kill_time or proc.kill_time > now:
           continue
         killed = (proc.name, TimeStr(now))
-        if not proc.killed:
+        if not parsed.kill_hung:
+          print('%%Subprocess %s hung at %s' % killed, file=sys.stderr)
+          proc.SetKill(final=False)
+        elif not proc.killed:
           print('%%Killing hung subprocess %s at %s' % killed,
                 file=sys.stderr)
           proc.Kill()

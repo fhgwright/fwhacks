@@ -308,6 +308,9 @@ class Line(object):  # pylint: disable=too-few-public-methods
 
 class Process(object):  # pylint: disable=too-many-instance-attributes
   """Class for subprocesses."""
+  KILL_DELAY = 7
+  KILL_TIMEOUT = 3
+
   # Assumes the command won't expect input via stdin
   def __init__(self, name, args, shell=False):
     # pylint: disable=too-many-arguments
@@ -331,6 +334,8 @@ class Process(object):  # pylint: disable=too-many-instance-attributes
     self.finished = None
     self.outdata = []
     self.partial = [b'', b'']
+    self.kill_time = None
+    self.killed = False
     # Python >=3.8 doesn't like line-buffered binary, so use unbuffered
     self.proc = subprocess.Popen(
         self.args, bufsize=0, shell=self.shell, executable=self.executable,
@@ -420,9 +425,22 @@ class Process(object):  # pylint: disable=too-many-instance-attributes
                           iserr, name and self.name, tstamp and time.time()),
               file=where[iserr])
 
-  def Signal(self, sig):
+  def Signal(self, sig, set_kill=False):
     """Send signal to subprocess."""
     self.proc.send_signal(sig)
+    if set_kill:
+      self.SetKill()
+
+  def SetKill(self, final=False):
+    """Set up kill timeout."""
+    if self.killed:
+      return
+    now = time.time()
+    if not final:
+      self.kill_time = now + self.KILL_DELAY
+    else:
+      self.killed = True
+      self.kill_time = now + self.KILL_TIMEOUT
 
   def Kill(self):
     """Kill subprocess."""
@@ -565,28 +583,40 @@ def main(argv):
   if parsed.verbose and not parsed.times:
     print('[Started (%d): %s]'
           % (len(procs), ','.join([x.name for x in procs])))
-  kill_time = None
   sigs_sent = set()
-  killed = False
   while procs:
     if poller.sigs_rcvd:
       sigs_to_send = poller.sigs_rcvd - sigs_sent
+      set_kill = parsed.signal_test or sigs_sent - SIG_WAIT
       for sig in sigs_to_send:
-        if parsed.verbose:
-          print('[Forwarding signal %d (%s) to subprocesses]'
-                % (sig, SIG_MAP.get(sig, '?')),
+        if parsed.verbose or parsed.signal_test:
+          now = time.time()
+          print('[Forwarding signal %d (%s) to subprocesses at %s]'
+                % (sig, SIG_MAP.get(sig, '?'), TimeStr(now)),
                 file=sys.stderr)
           sys.stderr.flush()
         for proc in procs:
-          proc.Signal(sig)
+          proc.Signal(sig, set_kill=set_kill)
       sigs_sent |= sigs_to_send
-      if not kill_time:
-        if parsed.signal_test or sigs_sent - SIG_WAIT:
-          kill_time = time.time()
     activity = False
+    now = time.time()
     for proc in procs[:]:
       ret = proc.Poll()
       if ret is False:
+        if not proc.kill_time or proc.kill_time > now:
+          continue
+        killed = (proc.name, TimeStr(now))
+        if not proc.killed:
+          print('%%Killing hung subprocess %s at %s' % killed,
+                file=sys.stderr)
+          proc.Kill()
+          proc.SetKill(final=True)
+          activity = True
+        elif proc.killed is True:
+          print('%%Timed out killing subprocess %s at %s' % killed,
+                file=sys.stderr)
+          proc.killed = now
+          retval = 999
         continue
       if ret is True:
         activity = True
@@ -630,16 +660,6 @@ def main(argv):
         procs[0].Print(parsed.names, parsed.times)
       activity = True
     if not activity:
-      if kill_time and time.time() - kill_time > 7:
-        if not killed:
-          print('%Killing hung subprocesses', file=sys.stderr)
-          for proc in procs:
-            proc.Kill()
-          killed = True
-        elif time.time() - kill_time > 10:
-          print('%Timed out killing subprocesses', file=sys.stderr)
-          retval = 999
-          break
       poller.poll(5000)
   finished = time.time()
   numdone = len(done)

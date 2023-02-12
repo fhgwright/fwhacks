@@ -10,7 +10,7 @@ import signal
 import sys
 import time
 
-SLEEP_TIME = 15
+SLEEP_TIME = 30
 
 SIG_LIST = [
     'SIGINT',

@@ -531,6 +531,7 @@ def main(argv):
   pdb_module = sys.modules.get('pdb')
   if pdb_module:
     pdb_module.set_trace()
+    pass  # Here to set breakpoints
   if parsed.command:
     command = shlex.split(parsed.command)
   else:

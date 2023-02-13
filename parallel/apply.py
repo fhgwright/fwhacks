@@ -444,7 +444,8 @@ class Process(object):  # pylint: disable=too-many-instance-attributes
   def SignalFailed(self, exc, msg):
     """Handle failure to signal subprocess."""
     if exc.errno != errno.EPERM:
-      raise
+      # "bare raise" is OK here since we were called from exception
+      raise  # pylint: disable=misplaced-bare-raise
     self.sigfail = True
     Eprint('Error %s subprocess %s: %s' % (msg, self.name, exc.strerror))
 

@@ -340,6 +340,7 @@ class Process(object):  # pylint: disable=too-many-instance-attributes
     self.finished = None
     self.outdata = []
     self.partial = [b'', b'']
+    self.sigfail = False
     self.kill_time = None
     self.killed = False
     # Python >=3.8 doesn't like line-buffered binary, so use unbuffered
@@ -433,9 +434,19 @@ class Process(object):  # pylint: disable=too-many-instance-attributes
 
   def Signal(self, sig, set_kill=False):
     """Send signal to subprocess."""
-    self.proc.send_signal(sig)
+    try:
+      self.proc.send_signal(sig)
+    except OSError as exc:
+      self.SignalFailed(exc, 'sending signal %d to' % sig)
     if set_kill:
       self.SetKill()
+
+  def SignalFailed(self, exc, msg):
+    """Handle failure to signal subprocess."""
+    if exc.errno != errno.EPERM:
+      raise
+    self.sigfail = True
+    Eprint('Error %s subprocess %s: %s' % (msg, self.name, exc.strerror))
 
   def SetKill(self, final=False):
     """Set up kill timeout."""
@@ -450,7 +461,10 @@ class Process(object):  # pylint: disable=too-many-instance-attributes
 
   def Kill(self):
     """Kill subprocess."""
-    self.proc.kill()
+    try:
+      self.proc.kill()
+    except OSError as exc:
+      self.SignalFailed(exc, 'killing')
 
 
 def SplitArgs(arglist):

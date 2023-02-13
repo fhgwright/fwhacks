@@ -34,4 +34,4 @@ Investigate hung after exit issue
 
 Fix polling rate with signals pending
 
-Give reasonable error when signaling subprocess fails due to perms
+Exit after failing to signal subprocesses.

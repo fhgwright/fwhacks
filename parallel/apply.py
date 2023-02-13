@@ -621,11 +621,15 @@ def main(argv):
           proc.Signal(sig, set_kill=set_kill)
       sigs_sent |= sigs_to_send
     activity = False
+    hung_check = False
     now = time.time()
     for proc in procs[:]:
       ret = proc.Poll()
       if ret is False:
-        if not proc.kill_time or proc.kill_time > now:
+        if not proc.kill_time:
+          continue
+        hung_check = True
+        if proc.kill_time > now:
           continue
         killed = (proc.name, TimeStr(now))
         if not parsed.kill_hung:
@@ -683,7 +687,7 @@ def main(argv):
         procs[0].Print(parsed.names, parsed.times)
       activity = True
     if not activity:
-      poller.poll(5000)
+      poller.poll(100 if hung_check else 5000)
   finished = time.time()
   numdone = len(done)
   if numdone > 1:

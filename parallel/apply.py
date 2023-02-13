@@ -623,6 +623,7 @@ def main(argv):
     activity = False
     hung_check = False
     now = time.time()
+    deadprocs = 0
     for proc in procs[:]:
       ret = proc.Poll()
       if ret is False:
@@ -632,7 +633,10 @@ def main(argv):
         if proc.kill_time > now:
           continue
         killed = (proc.name, TimeStr(now))
-        if not parsed.kill_hung:
+        if proc.sigfail:
+          Eprint('%%Unsignaled subprocess %s still running at %s' % killed)
+          deadprocs += 1
+        elif not parsed.kill_hung:
           Eprint('%%Subprocess %s hung at %s' % killed)
           proc.SetKill(final=False)
         elif not proc.killed:
@@ -643,7 +647,7 @@ def main(argv):
         elif proc.killed is True:
           Eprint('%%Timed out killing subprocess %s at %s' % killed)
           proc.killed = now
-          retval = 999
+          deadprocs += 1
         continue
       if ret is True:
         activity = True
@@ -686,6 +690,10 @@ def main(argv):
       if parsed.sequential and len(procs) == 1:
         procs[0].Print(parsed.names, parsed.times)
       activity = True
+    if deadprocs and deadprocs >= len(procs):
+      Eprint('%%Abandoning %d unsignalable subprocesses' % deadprocs)
+      retval = 999
+      break
     if not activity:
       poller.poll(100 if hung_check else 5000)
   finished = time.time()

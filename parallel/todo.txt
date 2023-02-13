@@ -22,8 +22,6 @@ Per-process output collection process, for better timestamping/ordering.
 
 Handle passwords, confirmations, etc.
 
-Handle failure to signal subprocess (UID change?)
-
 Fix semi-duplicate start messages in -tv mode
 
 Include count in Failures message.
@@ -31,3 +29,9 @@ Include count in Failures message.
 Make -t work when (ping) piped through tee.
 
 Fix signal/select interaction (see signal.set_wakeup_fd)
+
+Investigate hung after exit issue
+
+Fix polling rate with signals pending
+
+Give reasonable error when signaling subprocess fails due to perms

@@ -646,6 +646,9 @@ def main(argv):
         # When down to last process, output in real time
         if not parsed.sequential or len(procs) < 2:
           proc.Print(parsed.names, parsed.times)
+        # Reset any signal timeout after output
+        if proc.kill_time:
+          proc.SetKill(final=False)
         continue
       proc.ret = ret
       procs.remove(proc)

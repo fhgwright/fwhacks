@@ -57,6 +57,12 @@ SIG_MAP = dict(zip([getattr(signal, _x) for _x in SIG_LIST], SIG_LIST))
 SIG_WAIT = set([getattr(signal, _x) for _x in ['SIGUSR1', 'SIGUSR2']])
 
 
+def Eprint(message):
+  """Print message to stderr."""
+  print(message, file=sys.stderr)
+  sys.stderr.flush()
+
+
 class Error(Exception):
   """Base class for all locally defined exceptions."""
 
@@ -531,11 +537,11 @@ def main(argv):
     command = args
     args = None
   if not command:
-    print('%s: must specify command' % prog, file=sys.stderr)
+    Eprint('%s: must specify command' % prog)
     return 2
   poller = Poller()
   if poller.POLL_FIX:
-    print('%Substituting for missing select.poll', file=sys.stderr)
+    Eprint('%Substituting for missing select.poll')
   if parsed.signal_test:
     print('[This pid = %d]' % os.getpid())
   procs = []
@@ -554,7 +560,7 @@ def main(argv):
     command = ['ssh', sshopts, '%M'] + command
   if not args:
     if parsed.names:
-      print('%s: -n illegal with empty target list' % prog, file=sys.stderr)
+      Eprint('%s: -n illegal with empty target list' % prog)
       return 2
     args = ['']
     mapdict = NULL_MAP
@@ -572,14 +578,14 @@ def main(argv):
     try:
       proc = Process(name, cmd, shell=parsed.shell)
     except OSError as exc:
-      print(repr(exc), file=sys.stderr)
+      Eprint(repr(exc))
       return 127
     if parsed.times:
       if proc.realname:
         msg = '[%s started at %%s]' % proc.realname
       else:
         msg = '[Started at %s]'
-      print(msg % TimeStr(proc.started), file=sys.stderr)
+      Eprint(msg % TimeStr(proc.started))
     proc.Register(poller)
     procs.append(proc)
   if parsed.verbose and not parsed.times:
@@ -593,9 +599,8 @@ def main(argv):
       for sig in sigs_to_send:
         if parsed.verbose or parsed.signal_test:
           now = time.time()
-          print('[Forwarding signal %d (%s) to subprocesses at %s]'
-                % (sig, SIG_MAP.get(sig, '?'), TimeStr(now)),
-                file=sys.stderr)
+          Eprint('[Forwarding signal %d (%s) to subprocesses at %s]'
+                 % (sig, SIG_MAP.get(sig, '?'), TimeStr(now)))
           sys.stderr.flush()
         for proc in procs:
           proc.Signal(sig, set_kill=set_kill)
@@ -609,17 +614,15 @@ def main(argv):
           continue
         killed = (proc.name, TimeStr(now))
         if not parsed.kill_hung:
-          print('%%Subprocess %s hung at %s' % killed, file=sys.stderr)
+          Eprint('%%Subprocess %s hung at %s' % killed)
           proc.SetKill(final=False)
         elif not proc.killed:
-          print('%%Killing hung subprocess %s at %s' % killed,
-                file=sys.stderr)
+          Eprint('%%Killing hung subprocess %s at %s' % killed)
           proc.Kill()
           proc.SetKill(final=True)
           activity = True
         elif proc.killed is True:
-          print('%%Timed out killing subprocess %s at %s' % killed,
-                file=sys.stderr)
+          Eprint('%%Timed out killing subprocess %s at %s' % killed)
           proc.killed = now
           retval = 999
         continue
@@ -646,20 +649,17 @@ def main(argv):
                      ElapsedStr(proc.finished - proc.started)))
         else:
           tstr = ''
-        print('[Returned %d%s%s]' % (ret, nstr, tstr),
-              file=sys.stderr)
+        Eprint('[Returned %d%s%s]' % (ret, nstr, tstr))
         if ret > retval:
           retval = ret
       if parsed.verbose and procs:
         if len(done) > 1:
           results = ['%s=%d' % (p.name, p.ret) for p in done]
-          print('[Returns (%d/%d): %s; retval = %d]'
-                % (len(done), len(args), ', '.join(results), retval),
-                file=sys.stderr)
+          Eprint('[Returns (%d/%d): %s; retval = %d]'
+                 % (len(done), len(args), ', '.join(results), retval))
         names = [x.name for x in procs]
-        print('[Still running (%d/%d): %s]'
-              % (len(procs), len(args), ','.join(names)),
-              file=sys.stderr)
+        Eprint('[Still running (%d/%d): %s]'
+               % (len(procs), len(args), ','.join(names)))
       # If transitioning to last process while sequential, catch up
       if parsed.sequential and len(procs) == 1:
         procs[0].Print(parsed.names, parsed.times)
@@ -672,23 +672,21 @@ def main(argv):
     if parsed.verbose:
       if not parsed.times:
         results = ['%s=%d' % (p.name, p.ret) for p in done]
-        print('[Returns: %s]' % ', '.join(results), file=sys.stderr)
+        Eprint('[Returns: %s]' % ', '.join(results))
       else:
         for proc in done:
-          print('[%s returned %d, took %s]'
-                % (proc.name, proc.ret,
-                   ElapsedStr(proc.finished - proc.started)),
-                file=sys.stderr)
-      print('[All %d processes complete, final return = %d]'
-            % (numdone, retval), file=sys.stderr)
+          Eprint('[%s returned %d, took %s]'
+                 % (proc.name, proc.ret,
+                    ElapsedStr(proc.finished - proc.started)))
+      Eprint('[All %d processes complete, final return = %d]'
+             % (numdone, retval))
     else:
       results = ['%s=%d' % (p.name, p.ret) for p in done if p.ret]
       if results:
-        print('[Failures: %s]' % ', '.join(results), file=sys.stderr)
+        Eprint('[Failures: %s]' % ', '.join(results))
   if parsed.times:
-    print('[Finished at %s, took %s]'
-          % (TimeStr(finished), ElapsedStr(finished - started)),
-          file=sys.stderr)
+    Eprint('[Finished at %s, took %s]'
+           % (TimeStr(finished), ElapsedStr(finished - started)))
   return retval
 
 

@@ -314,8 +314,8 @@ class Line(object):  # pylint: disable=too-few-public-methods
 
 class Process(object):  # pylint: disable=too-many-instance-attributes
   """Class for subprocesses."""
-  KILL_DELAY = 7
-  KILL_TIMEOUT = 3
+  KILL_DELAY = 10
+  KILL_TIMEOUT = 5
 
   # Assumes the command won't expect input via stdin
   def __init__(self, name, args, shell=False):

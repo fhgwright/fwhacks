@@ -15,11 +15,22 @@ import shlex
 import signal
 import sys
 import time
+import warnings
 
 try:
-  import subprocess32 as subprocess
+  # Importing subprocess32 may emit a verbose warning about not using
+  # the _posixsubprocess module.  We suppress it here.
+  with warnings.catch_warnings():
+    warnings.simplefilter('ignore')
+    import subprocess32 as subprocess
 except ImportError:
   import subprocess
+
+# Now figure out if we really got _posixsubprocess
+try:
+  POSIXSUBPROCESS = subprocess._posixsubprocess
+except AttributeError:
+  POSIXSUBPROCESS = None
 
 SUBST_HELP = [
     '  Default (-a or positional) substitution options:',
@@ -556,8 +567,11 @@ def main(argv):
     Eprint('%s: must specify command' % prog)
     return 2
   poller = Poller()
-  if poller.POLL_FIX:
-    Eprint('%Substituting for missing select.poll')
+  if parsed.verbose:
+    if not POSIXSUBPROCESS:
+      Eprint('%Python not using _posixsubprocess, should be OK here')
+    if poller.POLL_FIX:
+      Eprint('%Substituting for missing select.poll')
   if parsed.signal_test:
     print('[This pid = %d]' % os.getpid())
   procs = []

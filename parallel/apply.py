@@ -414,7 +414,10 @@ class Process(object):  # pylint: disable=too-many-instance-attributes
     return True
 
   def _GetBothOutputs(self):
-    return self._GetOutput(0) or self._GetOutput(1)
+    # Prioritize stderr over stdout, which behaves better in at least one case.
+    # It would be better to detect and respect the actual order, but that would
+    # be harder.
+    return self._GetOutput(1) or self._GetOutput(0)
 
   def _AddBothOutputs(self, out, err):
     self._AddOutput(0, out)

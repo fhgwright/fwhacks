@@ -313,7 +313,7 @@ main(int argc, char *argv[])
 unsigned long long adr, val;
 unsigned long long count = 1;
 unsigned long long stride = 1;
-int mode = 0, minargs, maxargs, size, kmem = 0, mask, idx;
+int mode = 0, minargs, maxargs, size, kmem = 0, mask, idx, nonemp;
 const char *sizarg = argv[1], *errmsg;
 const char *prog = basename(argv[0]);
 
@@ -365,9 +365,17 @@ const char *prog = basename(argv[0]);
   if (mode > 0) {
     mask = size > 4 ? 3 : size > 2 ? 7 : 15;
     idx = 0;
+    nonemp = 0;
     while (count--) {
-      if (idx && !(idx & mask)) printf("\n");
+      if (idx && !(idx & mask)) {
+        printf("\n");
+        nonemp = 0;
+      }
       if ((errmsg = dopeek(&adr, &val, size, stride))) {
+        if (nonemp) {
+          printf("\n");
+        }
+        fflush(stdout);
         fprintf(stderr, "%s at %llX\n", errmsg, adr);
         close_mem();
         return 8;
@@ -375,6 +383,7 @@ const char *prog = basename(argv[0]);
       val &= (1 << (size * 8)) - 1;
       printf(" %0*llX", size * 2, val);
       ++idx;
+      nonemp = 1;
     }
     printf("\n");
   } else {

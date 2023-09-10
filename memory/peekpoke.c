@@ -383,12 +383,12 @@ const char *prog = basename(argv[0]);
       if (getnum(argv[idx], &val, 16)) {
         fprintf(stderr, "Bad value: %s\n", argv[idx]);
         close_mem();
-        return 5;
+        return 9;
       }
       if ((errmsg = dopoke(&adr, &val, size, stride))) {
         fprintf(stderr, "%s at %llX\n", errmsg, adr);
         close_mem();
-        return 7;
+        return 10;
       }
       ++idx;
     }

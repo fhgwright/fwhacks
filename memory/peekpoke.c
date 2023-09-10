@@ -173,6 +173,7 @@ doread(int fd, void *valp, size_t size, uint64_t adr)
 int ret;
 static char errbuf[100];
 
+  *((uint64_t *) valp) = 0xDEADBEEFDEADBEEFULL;
   ret = pread(fd, valp, size, adr);
 
   if (ret == size) return NULL;
@@ -371,6 +372,7 @@ const char *prog = basename(argv[0]);
         close_mem();
         return 8;
       }
+      val &= (1 << (size * 8)) - 1;
       printf(" %0*llX", size * 2, val);
       ++idx;
     }

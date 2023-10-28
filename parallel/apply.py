@@ -10,6 +10,7 @@ import errno
 import fcntl
 import math
 import os
+import pprint
 import select
 import shlex
 import signal
@@ -499,6 +500,12 @@ def ShellStr(command):
   return ' '.join(command)
 
 
+def DebugInfo(label, obj):
+  """Print a label and some debuuging info, to stderr."""
+  print(label + ':', file=sys.stderr)
+  pprint.pprint(obj, stream=sys.stderr)
+
+
 def ParseArgs(prog, args):
   """Parse arguments from command line.
 
@@ -542,6 +549,8 @@ def ParseArgs(prog, args):
                       help='run with shell')
   parser.add_argument('-K', '--kill-hung', action='store_true',
                       help='kill hung subprocesses')
+  parser.add_argument('-D', '--debug', action='store_true',
+                      help='provide debugging output')
   parser.add_argument('--signal-test', action='store_true',
                       help='enable signal-testing features')
   parser.add_argument('remaining', nargs=argparse.REMAINDER)
@@ -561,6 +570,8 @@ def main(argv):
   if pdb_module:
     pdb_module.set_trace()
     _ = pdb_module  # Here to set breakpoints
+  if parsed.debug:
+    DebugInfo('Incoming argv', argv)
   if parsed.command:
     command = shlex.split(parsed.command)
   else:
@@ -569,6 +580,8 @@ def main(argv):
   if not command:
     Eprint('%s: must specify command' % prog)
     return 2
+  if parsed.debug:
+    DebugInfo('Generic command', command)
   poller = Poller()
   if parsed.verbose:
     if not POSIXSUBPROCESS:
@@ -597,6 +610,8 @@ def main(argv):
       return 2
     args = ['']
     mapdict = NULL_MAP
+  if parsed.debug:
+    DebugInfo('Arg list', args)
   for sig in SIG_MAP:
     poller.Signal(sig)
   started = time.time()
@@ -608,6 +623,9 @@ def main(argv):
     else:
       name = None
     cmd = [Interpolate(x, arg, mapdict) for x in command]
+    if parsed.debug:
+      DebugInfo('Instance arg', arg)
+      DebugInfo('Instance cmd', cmd)
     try:
       proc = Process(name, cmd, shell=parsed.shell)
     except OSError as exc:

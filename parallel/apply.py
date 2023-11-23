@@ -501,7 +501,7 @@ def ShellStr(command):
 
 
 def DebugInfo(label, obj):
-  """Print a label and some debuuging info, to stderr."""
+  """Print a label and some debugging info, to stderr."""
   print(label + ':', file=sys.stderr)
   pprint.pprint(obj, stream=sys.stderr)
 

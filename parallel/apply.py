@@ -494,6 +494,17 @@ def SplitArgs(arglist):
   return result
 
 
+def DedupArgs(arglist):
+  """Remove duplicates from arg list."""
+  result = []
+  used = set()
+  for arg in arglist:
+    if arg not in used:
+      used |= set([arg])
+      result.append(arg)
+  return result
+
+
 def ShellStr(command):
   """Convert command/arg list to single string for shell."""
   # Doesn't quote args so that they can have their shell functions
@@ -541,6 +552,8 @@ def ParseArgs(prog, args):
                        help='file containing argument lines')
   argopts.add_argument('-m', '--machines', action='append',
                        help='target machines (via ssh)')
+  parser.add_argument('-d', '--allow-dups', action='store_true',
+                      help='allow duplicate subprocesses')
   parser.add_argument('-4', '--ipv4', action='store_true',
                       help="force IPv4 with -m's ssh")
   parser.add_argument('-6', '--ipv6', action='store_true',
@@ -604,6 +617,8 @@ def main(argv):
     mapdict = MACH_MAP
     sshopts = '-4T' if parsed.ipv4 else '-6T' if parsed.ipv6 else '-T'
     command = ['ssh', sshopts, '%M'] + command
+  if args and not parsed.allow_dups:
+    args = DedupArgs(args)
   if not args:
     if parsed.names:
       Eprint('%s: -n illegal with empty target list' % prog)

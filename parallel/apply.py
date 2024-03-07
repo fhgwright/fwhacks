@@ -499,8 +499,9 @@ def DedupArgs(arglist):
   result = []
   used = set()
   for arg in arglist:
-    if arg not in used:
-      used |= set([arg])
+    argl = arg.lower()
+    if argl not in used:
+      used |= set([argl])
       result.append(arg)
   return result
 

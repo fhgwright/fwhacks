@@ -447,6 +447,24 @@ class Process(object):  # pylint: disable=too-many-instance-attributes
                           iserr, name and self.name, tstamp and time.time()),
               file=where[iserr])
 
+  def PrintCompletion(self, name=None, tstamp=False, ret=None, verbose=False,
+                      where=(sys.stdout, sys.stderr)):
+    """Print data and status at process completion."""
+    self.Print(name=name, tstamp=tstamp, where=where)
+    self.PrintLast(name=name, tstamp=tstamp, where=where)
+    if ret or verbose or tstamp:
+      if self.realname:
+        nstr = ' for ' + self.realname
+      else:
+        nstr = ''
+      if tstamp:
+        tstr = (' at %s, took %s'
+                % (TimeStr(self.finished),
+                   ElapsedStr(self.finished - self.started)))
+      else:
+        tstr = ''
+      Eprint('[Returned %d%s%s]' % (ret, nstr, tstr))
+
   def Signal(self, sig, set_kill=False):
     """Send signal to subprocess."""
     try:
@@ -714,22 +732,9 @@ def main(argv):
       procs.remove(proc)
       done.append(proc)
       proc.Unregister(poller)
-      proc.Print(parsed.names, parsed.times)
-      proc.PrintLast(parsed.names, parsed.times)
-      if ret or parsed.verbose or parsed.times:
-        if proc.realname:
-          nstr = ' for ' + proc.realname
-        else:
-          nstr = ''
-        if parsed.times:
-          tstr = (' at %s, took %s'
-                  % (TimeStr(proc.finished),
-                     ElapsedStr(proc.finished - proc.started)))
-        else:
-          tstr = ''
-        Eprint('[Returned %d%s%s]' % (ret, nstr, tstr))
-        if ret > retval:
-          retval = ret
+      proc.PrintCompletion(parsed.names, parsed.times, ret, parsed.verbose)
+      if ret > retval:
+        retval = ret
       if parsed.verbose and procs:
         if len(done) > 1:
           results = ['%s=%d' % (p.name, p.ret) for p in done]

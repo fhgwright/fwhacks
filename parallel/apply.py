@@ -447,12 +447,12 @@ class Process(object):  # pylint: disable=too-many-instance-attributes
                           iserr, name and self.name, tstamp and time.time()),
               file=where[iserr])
 
-  def PrintCompletion(self, name=None, tstamp=False, ret=None, verbose=False,
+  def PrintCompletion(self, name=None, tstamp=False, verbose=False,
                       where=(sys.stdout, sys.stderr)):
     """Print data and status at process completion."""
     self.Print(name=name, tstamp=tstamp, where=where)
     self.PrintLast(name=name, tstamp=tstamp, where=where)
-    if ret or verbose or tstamp:
+    if self.ret or verbose or tstamp:
       if self.realname:
         nstr = ' for ' + self.realname
       else:
@@ -463,7 +463,7 @@ class Process(object):  # pylint: disable=too-many-instance-attributes
                    ElapsedStr(self.finished - self.started)))
       else:
         tstr = ''
-      Eprint('[Returned %d%s%s]' % (ret, nstr, tstr))
+      Eprint('[Returned %d%s%s]' % (self.ret, nstr, tstr))
 
   def Signal(self, sig, set_kill=False):
     """Send signal to subprocess."""
@@ -556,6 +556,8 @@ def ParseArgs(prog, args):
       )
   parser.add_argument('-s', '--sequential', action='store_true',
                       help='report output sequentially per process')
+  parser.add_argument('-O', '--ordered', action='store_true',
+                      help='report sequential output in requested order')
   parser.add_argument('-n', '--names', action='store_true',
                       help='tag output lines with item names')
   parser.add_argument('-t', '--times', action='store_true',
@@ -624,6 +626,7 @@ def main(argv):
     print('[This pid = %d]' % os.getpid())
   procs = []
   done = []
+  held = []
   retval = 0
   mapdict = PATH_MAP
   if parsed.arg_file:
@@ -673,6 +676,8 @@ def main(argv):
       Eprint(msg % TimeStr(proc.started))
     proc.Register(poller)
     procs.append(proc)
+  requested = procs[:]
+  ordered = procs[:]
   if parsed.verbose and not parsed.times:
     print('[Started (%d): %s]'
           % (len(procs), ','.join([x.name for x in procs])))
@@ -722,7 +727,7 @@ def main(argv):
       if ret is True:
         activity = True
         # When down to last process, output in real time
-        if not parsed.sequential or len(procs) < 2:
+        if not parsed.sequential or len(procs + held) < 2:
           proc.Print(parsed.names, parsed.times)
         # Reset any signal timeout after output
         if proc.kill_time:
@@ -732,7 +737,23 @@ def main(argv):
       procs.remove(proc)
       done.append(proc)
       proc.Unregister(poller)
-      proc.PrintCompletion(parsed.names, parsed.times, ret, parsed.verbose)
+      if not parsed.ordered:
+        proc.PrintCompletion(parsed.names, parsed.times, parsed.verbose)
+      else:
+        if proc == ordered[0]:
+          proc.PrintCompletion(parsed.names, parsed.times, parsed.verbose)
+          del ordered[0]
+          hlen = 0
+          while len(held) != hlen:
+            hlen = len(held)
+            for hproc in held[:]:
+              if hproc == ordered[0]:
+                hproc.PrintCompletion(parsed.names, parsed.times,
+                                      parsed.verbose)
+                del ordered[0]
+                held.remove(hproc)
+        else:
+          held.append(proc)
       if ret > retval:
         retval = ret
       if parsed.verbose and procs:
@@ -744,7 +765,7 @@ def main(argv):
         Eprint('[Still running (%d/%d): %s]'
                % (len(procs), len(args), ','.join(names)))
       # If transitioning to last process while sequential, catch up
-      if parsed.sequential and len(procs) == 1:
+      if parsed.sequential and len(procs + held) == 1:
         procs[0].Print(parsed.names, parsed.times)
       activity = True
     if deadprocs and deadprocs >= len(procs):
@@ -756,6 +777,8 @@ def main(argv):
   finished = time.time()
   numdone = len(done)
   if numdone > 1:
+    if parsed.ordered and len(done) == len(requested):
+      done = requested
     if parsed.verbose:
       if not parsed.times:
         results = ['%s=%d' % (p.name, p.ret) for p in done]

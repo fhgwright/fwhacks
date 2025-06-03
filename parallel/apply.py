@@ -726,8 +726,9 @@ def main(argv):
         continue
       if ret is True:
         activity = True
-        # When down to last process, output in real time
-        if not parsed.sequential or len(procs + held) < 2:
+        # When down to last process (or first in line), output in real time
+        if (not parsed.sequential or len(procs + held) < 2
+           or (parsed.ordered and len(ordered) and proc == ordered[0])):
           proc.Print(parsed.names, parsed.times)
         # Reset any signal timeout after output
         if proc.kill_time:
@@ -752,6 +753,9 @@ def main(argv):
                                       parsed.verbose)
                 del ordered[0]
                 held.remove(hproc)
+          # If ordered procs still present, catch up on next's output
+          if len(ordered):
+            ordered[0].Print(parsed.names, parsed.times)
         else:
           held.append(proc)
       if ret > retval:

@@ -1,3 +1,5 @@
+Fix InterruptedCommand with cpath unset
+
 Logfile
 
 Separate create from start
@@ -30,4 +32,4 @@ Make -t work when (ping) piped through tee.
 
 Fix signal/select interaction (see signal.set_wakeup_fd)
 
-Detect duplicate hosts in -m
+Output/error to file, including merge

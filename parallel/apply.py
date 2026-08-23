@@ -637,8 +637,12 @@ def main(argv):
   if parsed.machines:
     args = SplitArgs(parsed.machines)
     mapdict = MACH_MAP
-    sshopts = '-4T' if parsed.ipv4 else '-6T' if parsed.ipv6 else '-T'
-    command = ['ssh', sshopts, '%M'] + command
+    sshopts = ['-o RequestTTY=no', '-o ServerAliveInterval=10']
+    if parsed.ipv4:
+      sshopts.append('-4')
+    if parsed.ipv6:
+      sshopts.append('-6')
+    command = ['ssh'] + sshopts + ['%M'] + command
   if args and not parsed.allow_dups:
     args = DedupArgs(args)
   if not args:
